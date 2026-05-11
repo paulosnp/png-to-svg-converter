@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VectorStudio - PNG to SVG</title>
+    <meta name="description" content="Converta suas imagens PNG para vetores SVG perfeitos em segundos.">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <script type="module">
+import { traceDataUrl, getSVG, THRESHOLD_AUTO } from 'https://esm.sh/@cadit-app/potrace-ts';
+
+document.addEventListener('DOMContentLoaded', () => {
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const originalPreview = document.getElementById('original-preview');
+    const imagePreview = document.getElementById('image-preview');
+    const resetBtn = document.getElementById('reset-btn');
+    
+    const svgPreview = document.getElementById('svg-preview');
+    const svgContainer = document.getElementById('svg-container');
+    const emptyState = document.querySelector('.empty-state');
+    const loadingState = document.getElementById('loading');
+    const downloadBtn = document.getElementById('download-btn');
+    const toast = document.getElementById('toast');
+
+    let currentSVG = '';
+
+    // Drag and Drop events
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        let dt = e.dataTransfer;
+        let files = dt.files;
+        handleFiles(files);
+    });
+
+    // Click to select
+    dropZone.addEventListener('click', () => {
+        fileInput.click();
+    });
+
+    fileInput.addEventListener('change', function() {
+        handleFiles(this.files);
+    });
+
+    function handleFiles(files) {
+        if (files.length === 0) return;
+        const file = files[0];
+        
+        if (!file.type.match('image.*')) {
+            showToast('Por favor, selecione apenas imagens (PNG/JPG).');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const imgData = e.target.result;
+            imagePreview.src = imgData;
+            
+            dropZone.classList.add('hidden');
+            originalPreview.classList.remove('hidden');
+            
+            processImage(imgData);
+        };
+        reader.readAsDataURL(file);
+    }
+
+    async function processImage(imgData) {
+        emptyState.classList.add('hidden');
+        svgContainer.innerHTML = '';
+        downloadBtn.classList.add('hidden');
+        svgPreview.classList.add('empty');
+        loadingState.classList.remove('hidden');
+
+        // Carregar a imagem na memória garantindo as dimensões reais (naturais)
+        const img = new Image();
+        img.onload = async () => {
+            const pad = 20;
+            const nw = img.naturalWidth || img.width || 800;
+            const nh = img.naturalHeight || img.height || 800;
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = nw + pad * 2;
+            canvas.height = nh + pad * 2;
+            const ctx = canvas.getContext('2d');
+            
+            // Fundo branco e desenho perfeitamente centralizado
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, nw, nh, pad, pad, nw, nh);
+            
+            const paddedImgData = canvas.toDataURL('image/png');
+
+            try {
+                const svgObj = await traceDataUrl(paddedImgData, { threshold: THRESHOLD_AUTO });
+                let svgStr = getSVG(svgObj);
+                
+                // Limpeza extrema: remover todos os atributos de tamanho e viewport que o potrace gerou
+                svgStr = svgStr.replace(/\s(width|height|viewBox)="[^"]*"/g, '');
+                
+                // Injetar as dimensões absolutas do canvas que nós criamos
+                svgStr = svgStr.replace('<svg', `<svg viewBox="0 0 ${canvas.width} ${canvas.height}" width="100%" height="100%"`);
+                
+                // Substituir a cor preta padrão por cinza escuro
+                svgStr = svgStr.replace(/fill="black"/g, 'fill="#404040"');
+                
+                currentSVG = svgStr;
+                loadingState.classList.add('hidden');
+                
+                svgPreview.classList.remove('empty');
+                svgContainer.innerHTML = currentSVG;
+                downloadBtn.classList.remove('hidden');
+                
+                showToast('Vetorização concluída com sucesso!');
+            } catch (err) {
+                loadingState.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                svgPreview.classList.add('empty');
+                showToast('Erro ao processar imagem.');
+                console.error(err);
+            }
+        };
+        img.src = imgData;
+    }
+
+    resetBtn.addEventListener('click', () => {
+        fileInput.value = '';
+        dropZone.classList.remove('hidden');
+        originalPreview.classList.add('hidden');
+        imagePreview.src = '';
+        
+        svgPreview.classList.add('empty');
+        emptyState.classList.remove('hidden');
+        svgContainer.innerHTML = '';
+        downloadBtn.classList.add('hidden');
+        currentSVG = '';
+    });
+
+    downloadBtn.addEventListener('click', () => {
+        if (!currentSVG) return;
+        
+        let finalSVG = currentSVG;
+        if (!finalSVG.includes('xmlns=')) {
+            finalSVG = finalSVG.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ');
+        }
+        
+        const blob = new Blob([finalSVG], {type: 'image/svg+xml;charset=utf-8'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'vetorizado-vectorstudio.svg';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    });
+
+    function showToast(msg) {
+        toast.textContent = msg;
+        toast.classList.remove('hidden');
+        setTimeout(() => {
+            toast.classList.add('hidden');
+        }, 3000);
+    }
+});
+
+</script>
+</head>
+<body>
+    <header class="app-header">
+        <h1>Vector<span class="highlight">Studio</span></h1>
+        <p>Arraste e solte uma imagem (PNG/JPG) para transformá-la em um vetor (SVG) instantaneamente.</p>
+    </header>
+
+    <main class="app-main">
+        <section class="panel input-panel">
+            <h2>Imagem Original</h2>
+            <div id="drop-zone" class="drop-zone">
+                <input type="file" id="file-input" accept="image/png, image/jpeg" hidden>
+                <div class="drop-content">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    <p>Arraste uma imagem ou clique para selecionar</p>
+                </div>
+            </div>
+            <div id="original-preview" class="preview-container hidden">
+                <img id="image-preview" src="" alt="Preview Original">
+                <button id="reset-btn" class="btn secondary">Limpar</button>
+            </div>
+        </section>
+
+        <div class="divider">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </div>
+
+        <section class="panel output-panel">
+            <h2>Vetor Gerado (SVG)</h2>
+            <div id="svg-preview" class="preview-container empty">
+                <div class="empty-state">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+                    <p>O vetor aparecerá aqui</p>
+                </div>
+                <div id="loading" class="loading-state hidden">
+                    <div class="spinner"></div>
+                    <p>Vetorizando...</p>
+                </div>
+                <div id="svg-container"></div>
+                <button id="download-btn" class="btn primary hidden">Baixar SVG</button>
+            </div>
+        </section>
+    </main>
+
+    <div id="toast" class="toast hidden"></div>
+</body>
+</html>
+
