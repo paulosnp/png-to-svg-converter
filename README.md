@@ -1,28 +1,28 @@
-# VectorStudio - PNG to SVG
+# VectorStudio - PNG para SVG
 
-VectorStudio is a fast, client-side web application that converts raster images (PNG/JPG) into high-quality, monochromatic Scalable Vector Graphics (SVG). 
+O VectorStudio é uma aplicação web rápida, rodando inteiramente no navegador, que converte imagens (PNG/JPG) em gráficos vetoriais escaláveis (SVG) monocromáticos de alta qualidade.
 
-It uses the powerful **Potrace** algorithm compiled to WebAssembly (Wasm) to trace mathematical paths and smooth curves directly in your browser, without any server-side processing.
+Ele utiliza o poderoso algoritmo **Potrace** compilado para WebAssembly (Wasm) para rastrear caminhos matemáticos e desenhar curvas suaves diretamente no seu navegador, sem precisar enviar seus arquivos para nenhum servidor.
 
-## 🚀 Features
-- **Instant Conversion:** Drag and drop images to vectorize them instantly.
-- **Client-Side Only:** 100% privacy-friendly. Your images never leave your device.
-- **Wasm Powered:** Utilizes `@cadit-app/potrace-ts` for extreme tracing performance and precision.
-- **Responsive Output:** Automatically injects an adaptive `viewBox` so your generated SVGs are infinitely scalable.
-- **Premium UI:** Glassmorphism aesthetics, dark mode, smooth transitions, and drag-and-drop feedback.
+## 🚀 Funcionalidades
+- **Conversão Instantânea:** Arraste e solte imagens para vetorizá-las em um piscar de olhos.
+- **100% Client-Side:** Privacidade garantida. Suas imagens nunca saem do seu computador ou celular.
+- **Poder do Wasm:** Utiliza a biblioteca `@cadit-app/potrace-ts` para máximo desempenho e precisão no traçado.
+- **Saída Responsiva:** O código já injeta automaticamente um `viewBox` inteligente para que os SVGs gerados se adaptem a qualquer tamanho de tela sem cortes.
+- **Design Premium:** Estética moderna com "Glassmorphism", modo escuro (Dark Mode) e transições suaves.
 
-## 🛠️ How to use
-You can access the app directly via GitHub Pages (once deployed).
-Alternatively, simply clone this repository and open the `index.html` file in your favorite browser! No `npm install` or local server required.
+## 🛠️ Como usar
+Você poderá acessar o app diretamente através do GitHub Pages.
+Ou, se preferir usar localmente, basta clonar este repositório e abrir o arquivo `index.html` em qualquer navegador! Não precisa rodar `npm install` e nem configurar servidores.
 
-1. Drag and drop a PNG or JPG file into the "Imagem Original" zone.
-2. Wait a few milliseconds while the Wasm algorithm processes the traces.
-3. Click **Baixar SVG** to save your new vector file.
+1. Arraste e solte um arquivo PNG ou JPG na área "Imagem Original".
+2. Aguarde milissegundos enquanto o algoritmo Wasm processa a arte.
+3. Clique em **Baixar SVG** para salvar o seu novo arquivo vetorial na máquina.
 
-## 💻 Built With
-- **HTML5 & Vanilla CSS** for a dependency-free, lightning-fast UI.
-- **ES Modules & WebAssembly** for browser-native logic.
-- **Potrace-ts** ([esm.sh/@cadit-app/potrace-ts](https://esm.sh/@cadit-app/potrace-ts)) for the tracing algorithm.
+## 💻 Tecnologias Utilizadas
+- **HTML5 & Vanilla CSS** para uma interface ultra rápida e sem bibliotecas pesadas.
+- **ES Modules & WebAssembly** para a lógica pesada de processamento fluir direto no navegador.
+- **Potrace-ts** ([esm.sh/@cadit-app/potrace-ts](https://esm.sh/@cadit-app/potrace-ts)) como motor do algoritmo de vetorização.
 
-## 📝 License
-This project relies on Potrace, which is licensed under the GPL-2.0 License. As such, any derivative works may also be subject to GPL-2.0.
+## 📝 Licença
+Este projeto utiliza o código base do Potrace, que é licenciado sob a Licença GPL-2.0. Sendo assim, qualquer modificação e redistribuição também deve seguir os termos da GPL-2.0.
